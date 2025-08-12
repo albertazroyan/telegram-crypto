@@ -97,8 +97,8 @@ cd telegram-crypto
 2. Update the frontend `.env` file:
    ```env
    # API Configuration
-   VITE_API_BASE_URL=http://localhost:5000/api
-   VITE_WS_URL=ws://localhost:5000
+   VITE_API_BASE_URL=/api
+   VITE_WS_URL=/ws
    
    # Telegram Widget
    VITE_TELEGRAM_BOT_NAME=your_telegram_bot_username
