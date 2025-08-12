@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # Backend service
+  backend:
+    build:
+      context: ./backand
+      dockerfile: Dockerfile
+    container_name: crypto-tracker-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backand:/usr/src/app
+      - /usr/src/app/node_modules
+      - ./frontend/dist:/usr/src/app/frontend_dist:ro
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - DB_HOST=postgres
+      - DB_NAME=crypto_tracker
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your_jwt_secret_here
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-your_telegram_bot_token}
+      - TELEGRAM_LOGIN_WIDGET_ID=${TELEGRAM_LOGIN_WIDGET_ID:-your_telegram_widget_id}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - crypto-network
+    command: npm run dev
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:14-alpine
+    container_name: crypto-tracker-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: crypto_tracker
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: crypto-tracker-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Frontend service (optional - uncomment if you want to run frontend with docker)
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: crypto-tracker-frontend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   environment:
+  #     - REACT_APP_API_URL=http://localhost:5000/api
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - crypto-network
+
+# Volumes for persistent data
+volumes:
+  postgres_data:
+  redis_data:
+
+# Networks
+networks:
+  crypto-network:
+    driver: bridge
